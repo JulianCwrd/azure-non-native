@@ -120,3 +120,26 @@ output "vm_public_ip" {
   value       = azurerm_public_ip.example.ip_address
   description = "Public IP address of the VM"
 }
+
+
+resource "azurerm_policy_definition" "mysql_policy" {
+  name         = "Ensure-MySQL-Installed"
+  policy_type  = "Custom"
+  mode         = "All"
+  display_name = "Ensure MySQL is Installed on VMs"
+  
+  metadata = <<METADATA
+  {
+    "category": "Compute"
+  }
+  METADATA
+
+  policy_rule = file("~Desktop/mysql-policy.json")  # Reference JSON file
+}
+
+# Assign Policy to the Resource Group
+resource "azurerm_policy_assignment" "mysql_policy_assignment" {
+  name  = "mysql-policy-assignment"
+  resource_id = azurerm_virtual_network.examople.id
+  policy_definition_id = azurerm_policy_definition.mysql_policy.id
+}
