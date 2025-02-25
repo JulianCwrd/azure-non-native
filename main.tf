@@ -62,7 +62,7 @@ resource "azurerm_subnet_network_security_group_association" "example" {
   network_security_group_id = azurerm_network_security_group.example.id
 }
 
-# Create a Public IP Address (Fixed)
+# Create a Public IP Address 
 resource "azurerm_public_ip" "example" {
   name                = "example-public-ip"
   location            = azurerm_resource_group.example.location
