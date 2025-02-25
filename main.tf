@@ -134,11 +134,11 @@ resource "azurerm_policy_definition" "mysql_policy" {
   }
   METADATA
 
-  policy_rule = file("~Desktop/mysql-policy.json")  # Reference JSON file
+  policy_rule = file("${path.module}/mysql-policy.json")  # Reference JSON file
 }
 
 # Assign Policy to the Resource Group
-resource "azurerm_policy_assignment" "mysql_policy_assignment" {
+data "azurerm_policy_assignment" "mysql_policy_assignment" {
   name  = "mysql-policy-assignment"
   resource_id = azurerm_virtual_network.examople.id
   policy_definition_id = azurerm_policy_definition.mysql_policy.id
