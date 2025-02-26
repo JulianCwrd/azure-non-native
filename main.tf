@@ -138,13 +138,82 @@ resource "azurerm_policy_definition" "mysql_policy" {
   }
   METADATA
 
-  policy_rule = file("mysql-policy.json")
+  policy_rule = <<POLICY_RULE
+  {
+    "if": {
+      "allOf": [
+        {
+          "field": "type",
+          "equals": "Microsoft.Compute/virtualMachines"
+        }
+      ]
+    },
+    "then": {
+      "effect": "DeployIfNotExists",
+      "details": {
+        "type": "Microsoft.Compute/virtualMachines/extensions",
+        "name": "install-mysql",
+        "existenceCondition": {
+          "field": "name",
+          "equals": "install-mysql"
+        },
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        ],
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "parameters": {
+              "vmName": {
+                "value": "[field('name')]"
+              },
+              "location": {
+                "value": "[field('location')]"
+              }
+            },
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "vmName": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                }
+              },
+              "resources": [
+                {
+                  "type": "Microsoft.Compute/virtualMachines/extensions",
+                  "apiVersion": "2021-03-01",
+                  "name": "[concat(parameters('vmName'), '/install-mysql')]",
+                  "location": "[parameters('location')]",
+                  "properties": {
+                    "publisher": "Microsoft.Azure.Extensions",
+                    "type": "CustomScript",
+                    "typeHandlerVersion": "2.0",
+                    "autoUpgradeMinorVersion": true,
+                    "settings": {
+                      "fileUris": ["https://raw.githubusercontent.com/JulianCwrd/azure-non-native/refs/heads/main/install-mysql.sh"],
+                      "commandToExecute": "bash install-mysql.sh"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+  POLICY_RULE
 }
+
 
 # Assign Policy to the Resource Group
 resource "azurerm_resource_group_policy_assignment" "mysql_policy_assignment" {
   name  = "mysql-policy-assignment"
-  resource_group_id = azurerm_resource_group.example.id
+  resource_group_id    = azurerm_resource_group.example.id
   policy_definition_id = azurerm_policy_definition.mysql_policy.id
   location             = azurerm_resource_group.example.location
 
