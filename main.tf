@@ -1,6 +1,10 @@
 provider "azurerm" {
   subscription_id = "1df50e13-c052-4ceb-a066-d62f1f368fe4"
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 # Resource Group
@@ -134,12 +138,17 @@ resource "azurerm_policy_definition" "mysql_policy" {
   }
   METADATA
 
-  policy_rule = file("${path.module}/mysql-policy.json")  # Reference JSON file
+  policy_rule = file("mysql-policy.json")
 }
 
 # Assign Policy to the Resource Group
-data "azurerm_policy_assignment" "mysql_policy_assignment" {
+resource "azurerm_resource_group_policy_assignment" "mysql_policy_assignment" {
   name  = "mysql-policy-assignment"
-  resource_id = azurerm_virtual_network.examople.id
+  resource_group_id = azurerm_resource_group.example.id
   policy_definition_id = azurerm_policy_definition.mysql_policy.id
+  location             = azurerm_resource_group.example.location
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
